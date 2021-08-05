@@ -20,7 +20,8 @@ exports.addPost = async (req,res,next) => {
     const post =  {
         title: req.body.title,
         imageUrl :req.body.imageUrl,
-        content :req.body.content
+        content :req.body.content,
+        user_id : req.userId
     }
     try {
         const newPost = await dbConnection.query(sqlquery.ADD_POST,post);
@@ -57,8 +58,14 @@ exports.updatePost = async(req,res,next) => {
     if(!title || !imageUrl || !content) {
         res.status(400).json('Parameter miss');
     }
-const post = dbConnection.query(sqlquery.UPDATE_POST_BY_ID,updatedPost);
-res.status(204).json({msg : 'Updated Succesfully'});
+    const post = dbConnection.query(sqlquery.GET_POST_BY_ID,postId);
+    if(post.userId === req.userId){
+        const updatedData = dbConnection.query(sqlquery.UPDATE_POST_BY_ID,updatedPost);
+        res.status(204).json({msg : 'Updated Succesfully'});
+    }else {
+        res.status(400).json('Permission denied');
+    }
+
  }catch(err){
     if (!err.statusCode) {
         err.statusCode = 500;
@@ -69,10 +76,15 @@ res.status(204).json({msg : 'Updated Succesfully'});
 
 exports.deletePost = async (req,res,next) => {
  try {
- const postId = req.params.postId 
-     const post = dbConnection.query(sqlquery.DELETE_POST_BY_ID,postId);
-console.log(post)
-     res.status(200).json({msg : 'Deleted Successfully'})
+ const postId = req.params.postId
+ const post = dbConnection.query(sqlquery.GET_POST_BY_ID,postId);
+ if(post.userId === req.userId) {
+
+    const postData = dbConnection.query(sqlquery.DELETE_POST_BY_ID,postId);
+    res.status(200).json({msg : 'Deleted Successfully'})
+ }else {
+    res.status(400).json('Permission denied');
+ }
  }   catch(err) {
     if (!err.statusCode) {
         err.statusCode = 500;

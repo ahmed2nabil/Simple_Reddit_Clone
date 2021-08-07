@@ -21,6 +21,11 @@ app.use((req, res, next) => {
 app.use(authRoutes);
 app.use(feedRoutes);
 
-app.listen(PORT,(req,res,next) => {
+const server = app.listen(PORT,(req,res,next) => {
     console.log(`Server listening on port ${PORT}`);
 })
+
+const io = require('./utils/socket').init(server);
+io.on('connection', socket => {
+  console.log('Client connected');
+});

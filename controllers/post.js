@@ -2,7 +2,7 @@
 const  dbConnection = require("../database/connection");
 const sqlquery = require("../database/queries").queryList
 
-
+const io = require('../utils/socket');
 exports.getPosts = async (req,res,next) => {
 try {
     const posts = await dbConnection.query(sqlquery.GET_All_POSTS);
@@ -25,6 +25,12 @@ exports.addPost = async (req,res,next) => {
     }
     try {
         const newPost = await dbConnection.query(sqlquery.ADD_POST,post);
+        const user = await dbConnection.query(sqlquery.GET_USER_BY_ID,req.userId);
+        console.log(user);
+        io.getIO().emit('posts', {
+            action: 'create',
+            post: { ...post, creator: { id: req.userId, name: user.name } }
+          });
         res.status(201).json({msg : 'Created Successfully',postId : newPost.insertId});
     }
     catch(err) {
@@ -61,6 +67,8 @@ exports.updatePost = async(req,res,next) => {
     const post = dbConnection.query(sqlquery.GET_POST_BY_ID,postId);
     if(post.userId === req.userId){
         const updatedData = dbConnection.query(sqlquery.UPDATE_POST_BY_ID,updatedPost);
+    io.getIO().emit('posts', { action: 'update', post: post });
+
         res.status(204).json({msg : 'Updated Succesfully'});
     }else {
         res.status(400).json('Permission denied');
@@ -81,6 +89,7 @@ exports.deletePost = async (req,res,next) => {
  if(post.userId === req.userId) {
 
     const postData = dbConnection.query(sqlquery.DELETE_POST_BY_ID,postId);
+    io.getIO().emit('posts', { action: 'delete', post: postId });
     res.status(200).json({msg : 'Deleted Successfully'})
  }else {
     res.status(400).json('Permission denied');

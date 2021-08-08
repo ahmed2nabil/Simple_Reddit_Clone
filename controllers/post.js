@@ -1,8 +1,12 @@
 'use strict'
+const fs = require('fs');
+const path = require('path');
+
 const  dbConnection = require("../database/connection");
 const sqlquery = require("../database/queries").queryList
 
 const io = require('../utils/socket');
+
 exports.getPosts = async (req,res,next) => {
 try {
     const posts = await dbConnection.query(sqlquery.GET_All_POSTS);
@@ -17,19 +21,23 @@ try {
 }
 
 exports.addPost = async (req,res,next) => {
+    if (!req.file) {
+        const error = new Error('No image provided.');
+        error.statusCode = 422;
+        throw error;
+      }
     const post =  {
         title: req.body.title,
-        imageUrl :req.body.imageUrl,
+        imageUrl :req.file.path,
         content :req.body.content,
         user_id : req.userId
     }
     try {
         const newPost = await dbConnection.query(sqlquery.ADD_POST,post);
         const user = await dbConnection.query(sqlquery.GET_USER_BY_ID,req.userId);
-        console.log(user);
         io.getIO().emit('posts', {
             action: 'create',
-            post: { ...post, creator: { id: req.userId, name: user.name } }
+            post: { ...post, creator: { id: req.userId, name: user[0].name } }
           });
         res.status(201).json({msg : 'Created Successfully',postId : newPost.insertId});
     }
@@ -58,7 +66,7 @@ exports.updatePost = async(req,res,next) => {
  try {
     const postId = req.params.postId;
     const title = req.body.title;
-    const imageUrl = req.body.imageUrl;
+    const imageUrl = req.file.path;
     const content = req.body.content;
     let updatedPost = [title,imageUrl,content,postId];
     if(!title || !imageUrl || !content) {

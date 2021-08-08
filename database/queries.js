@@ -14,5 +14,12 @@ exports.queryList = {
     ADD_POST : 'INSERT INTO post SET ?',
     GET_POST_BY_ID : 'SELECT  * from post WHERE (post_id = ?)',
     UPDATE_POST_BY_ID : 'UPDATE post SET title = ?, imageUrl = ? , content = ? WHERE (post_id = ?)',
-    DELETE_POST_BY_ID : 'DELETE FROM post WHERE (post_id) = ?'
+    DELETE_POST_BY_ID : 'DELETE FROM post WHERE (post_id) = ?',
+
+    // Comments 
+    ADD_COMMENT : 'INSERT INTO comment SET ?',
+    GET_ALL_COMMENTS : 'SELECT * FROM comment WHERE (post_id = ?)',
+    GET_COMMENT : 'SELECT  * FROM comment WHERE (comment_id = ? AND post_id = ?)',
+    UPDATE_COMMET : 'UPDATE comment SET content = ? WHERE (comment_id = ? AND post_id =?)',
+    DELETE_COMMENT_BY_ID : 'DELETE FROM comment WHERE (comment_id = ?)'
 }

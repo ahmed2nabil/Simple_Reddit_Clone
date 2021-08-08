@@ -66,14 +66,14 @@ exports.updatePost = async(req,res,next) => {
  try {
     const postId = req.params.postId;
     const title = req.body.title;
-    const imageUrl = req.file.path;
+    const imageUrl = req.body.imageUrl;
     const content = req.body.content;
     let updatedPost = [title,imageUrl,content,postId];
     if(!title || !imageUrl || !content) {
         res.status(400).json('Parameter miss');
     }
-    const post = dbConnection.query(sqlquery.GET_POST_BY_ID,postId);
-    if(post.userId === req.userId){
+    const post = await dbConnection.query(sqlquery.GET_POST_BY_ID,postId);
+    if(post[0].user_id === req.userId){
         const updatedData = dbConnection.query(sqlquery.UPDATE_POST_BY_ID,updatedPost);
     io.getIO().emit('posts', { action: 'update', post: post });
 
@@ -93,10 +93,11 @@ exports.updatePost = async(req,res,next) => {
 exports.deletePost = async (req,res,next) => {
  try {
  const postId = req.params.postId
- const post = dbConnection.query(sqlquery.GET_POST_BY_ID,postId);
- if(post.userId === req.userId) {
+ const post = await dbConnection.query(sqlquery.GET_POST_BY_ID,postId);
+ if(post[0].user_id === req.userId) {
 
-    const postData = dbConnection.query(sqlquery.DELETE_POST_BY_ID,postId);
+    const postData =await dbConnection.query(sqlquery.DELETE_POST_BY_ID,postId);
+    clearImage(post[0].imageUrl);
     io.getIO().emit('posts', { action: 'delete', post: postId });
     res.status(200).json({msg : 'Deleted Successfully'})
  }else {
@@ -105,7 +106,14 @@ exports.deletePost = async (req,res,next) => {
  }   catch(err) {
     if (!err.statusCode) {
         err.statusCode = 500;
+        
       }
       next(err);
  }
 }
+
+
+const clearImage = filePath => {
+    filePath = path.join(__dirname, '..', filePath);
+    fs.unlink(filePath, err => console.log(err));
+  };
